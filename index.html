@@ -46,6 +46,15 @@
         <span class="nav-icon">📥</span>
         <span class="nav-label">Import from Google</span>
       </a>
+      <!-- Lock / Unlock — toggled by JS -->
+      <a href="#" class="nav-link nav-link-lock" id="nav-unlock" onclick="openUnlockModal(null)">
+        <span class="nav-icon">🔓</span>
+        <span class="nav-label">Owner Login</span>
+      </a>
+      <a href="#" class="nav-link nav-link-lock" id="nav-lock" onclick="lockSession()">
+        <span class="nav-icon">🔒</span>
+        <span class="nav-label">Lock</span>
+      </a>
     </div>
 
     <div class="sidebar-stats" id="sidebar-stats">
@@ -266,6 +275,55 @@
           <li>Commit &amp; push to GitHub — your new place will appear live!</li>
         </ol>
         <button class="btn-primary" onclick="closeAddModal(); location.reload();">Done ✓</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========== LOCK / UNLOCK MODAL ========== -->
+  <div class="modal-overlay" id="lock-modal-overlay" onclick="closeLockModal()">
+    <div class="modal lock-modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeLockModal()">✕</button>
+
+      <!-- SETUP (first time) -->
+      <div id="lock-setup-panel">
+        <div class="lock-modal-body">
+          <div class="lock-icon">🔐</div>
+          <h2 class="lock-title">Set Your Password</h2>
+          <p class="lock-desc">This is your first time. Set a password to protect Add Place and Import features. Only the SHA-256 hash is stored — your password is never saved anywhere.</p>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">New Password</label>
+            <input type="password" id="lock-setup-pw" class="form-input" placeholder="At least 4 characters"
+              onkeydown="handleLockKeydown(event,'setup')" autofocus />
+          </div>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" id="lock-setup-pw2" class="form-input" placeholder="Repeat password"
+              onkeydown="handleLockKeydown(event,'setup')" />
+          </div>
+          <p class="lock-error" id="lock-error"></p>
+          <button class="btn-primary" style="width:100%;justify-content:center;" onclick="handleSetupPassword()">
+            Set Password &amp; Continue →
+          </button>
+        </div>
+      </div>
+
+      <!-- LOGIN (password already set) -->
+      <div id="lock-login-panel" style="display:none;">
+        <div class="lock-modal-body">
+          <div class="lock-icon">🔓</div>
+          <h2 class="lock-title">Owner Login</h2>
+          <p class="lock-desc">Enter your password to unlock Add Place and Import features for this session.</p>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label class="form-label">Password</label>
+            <input type="password" id="lock-login-pw" class="form-input" placeholder="Your password"
+              onkeydown="handleLockKeydown(event,'login')" autofocus />
+          </div>
+          <p class="lock-error" id="lock-error"></p>
+          <button class="btn-primary" style="width:100%;justify-content:center;" onclick="handleLogin()">
+            Unlock 🔓
+          </button>
+        </div>
       </div>
 
     </div>

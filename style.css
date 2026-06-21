@@ -1446,3 +1446,57 @@ img { display: block; max-width: 100%; }
   font-size: 12px;
   color: var(--text-3);
 }
+
+/* ============================================================
+   LOCK / UNLOCK MODAL
+   ============================================================ */
+.lock-modal {
+  max-width: 420px;
+  width: 100%;
+}
+
+.lock-modal-body {
+  padding: 36px 28px 32px;
+  text-align: center;
+}
+
+.lock-icon {
+  font-size: 52px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(99,102,241,0.5));
+}
+
+.lock-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-1);
+  margin-bottom: 10px;
+}
+
+.lock-desc {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.lock-error {
+  font-size: 13px;
+  color: #f43f5e;
+  min-height: 20px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+/* Lock/unlock nav buttons — gold accent to stand out */
+.nav-link-lock {
+  color: var(--gold) !important;
+  opacity: 0.8;
+}
+
+.nav-link-lock:hover {
+  opacity: 1;
+  background: rgba(245,158,11,0.1) !important;
+  border-color: rgba(245,158,11,0.3) !important;
+}

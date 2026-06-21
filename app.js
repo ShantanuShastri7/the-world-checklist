@@ -2,6 +2,62 @@
    THE WORLD CHECKLIST — APP LOGIC
    ============================================================ */
 
+// ─── Auth ────────────────────────────────────────────────────
+// Password is stored ONLY as a SHA-256 hash in localStorage.
+// The actual password is never saved anywhere in the code or repo.
+const AUTH_HASH_KEY = 'worldChecklist_authHash';
+const AUTH_SESSION_KEY = 'worldChecklist_unlocked';
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function isUnlocked() {
+  return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
+}
+
+function hasPasswordSet() {
+  return !!localStorage.getItem(AUTH_HASH_KEY);
+}
+
+async function attemptUnlock(password) {
+  const hash = await sha256(password);
+  const stored = localStorage.getItem(AUTH_HASH_KEY);
+  if (hash === stored) {
+    sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+    return true;
+  }
+  return false;
+}
+
+async function setPassword(password) {
+  const hash = await sha256(password);
+  localStorage.setItem(AUTH_HASH_KEY, hash);
+  sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+}
+
+function lockSession() {
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const unlocked = isUnlocked();
+  // Show/hide the owner-only nav items
+  const addLink = document.getElementById('nav-add');
+  const takeoutLink = document.getElementById('nav-takeout');
+  const lockBtn = document.getElementById('nav-lock');
+  const unlockBtn = document.getElementById('nav-unlock');
+
+  if (addLink) addLink.style.display = unlocked ? 'flex' : 'none';
+  if (takeoutLink) takeoutLink.style.display = unlocked ? 'flex' : 'none';
+  if (lockBtn) lockBtn.style.display = unlocked ? 'flex' : 'none';
+  if (unlockBtn) unlockBtn.style.display = unlocked ? 'none' : 'flex';
+}
+
 // ─── Global State ───────────────────────────────────────────
 let appData = { countries: [] };
 let map = null;
@@ -18,6 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
   renderExplore();
   setCurrentDateTime();
+  updateAuthUI();
 });
 
 // ─── Load Data ───────────────────────────────────────────────
@@ -318,8 +375,9 @@ function initMap() {
   map.addLayer(mapMarkers);
 }
 
-// ─── Add Entry Modal ──────────────────────────────────────────
+// ─── Add Entry Modal ───────────────────────────────────────────
 function openAddModal() {
+  if (!isUnlocked()) { openUnlockModal('add'); return; }
   document.getElementById('add-modal-overlay').classList.add('open');
   document.getElementById('add-success').style.display = 'none';
   document.getElementById('add-form').style.display = 'block';
@@ -470,11 +528,12 @@ function handleAddSubmit(e) {
   }
 }
 
-// ─── Google Takeout Import ────────────────────────────────────
+// ─── Google Takeout Import ────────────────────────────────────────
 let takeoutRawPlaces = [];
 let takeoutReviewItems = [];
 
 function openTakeoutModal() {
+  if (!isUnlocked()) { openUnlockModal('takeout'); return; }
   document.getElementById('takeout-modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -748,7 +807,75 @@ function confirmTakeoutImport() {
   if (map) { map.remove(); map = null; mapMarkers = null; }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// ─── Lock / Unlock Modal ───────────────────────────────────────
+let _pendingActionAfterUnlock = null;
+
+function openUnlockModal(pendingAction) {
+  _pendingActionAfterUnlock = pendingAction || null;
+  const overlay = document.getElementById('lock-modal-overlay');
+  // Decide which panel to show: setup (first time) or login
+  const setupPanel = document.getElementById('lock-setup-panel');
+  const loginPanel = document.getElementById('lock-login-panel');
+  if (hasPasswordSet()) {
+    setupPanel.style.display = 'none';
+    loginPanel.style.display = 'block';
+  } else {
+    setupPanel.style.display = 'block';
+    loginPanel.style.display = 'none';
+  }
+  // Clear inputs
+  ['lock-setup-pw', 'lock-setup-pw2', 'lock-login-pw'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('lock-error').textContent = '';
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLockModal() {
+  document.getElementById('lock-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _pendingActionAfterUnlock = null;
+}
+
+async function handleSetupPassword() {
+  const pw = document.getElementById('lock-setup-pw').value;
+  const pw2 = document.getElementById('lock-setup-pw2').value;
+  const err = document.getElementById('lock-error');
+  if (pw.length < 4) { err.textContent = 'Password must be at least 4 characters.'; return; }
+  if (pw !== pw2) { err.textContent = 'Passwords do not match.'; return; }
+  await setPassword(pw);
+  closeLockModal();
+  updateAuthUI();
+  // Fire the pending action
+  if (_pendingActionAfterUnlock === 'add') openAddModal();
+  else if (_pendingActionAfterUnlock === 'takeout') openTakeoutModal();
+}
+
+async function handleLogin() {
+  const pw = document.getElementById('lock-login-pw').value;
+  const err = document.getElementById('lock-error');
+  const ok = await attemptUnlock(pw);
+  if (ok) {
+    closeLockModal();
+    updateAuthUI();
+    if (_pendingActionAfterUnlock === 'add') openAddModal();
+    else if (_pendingActionAfterUnlock === 'takeout') openTakeoutModal();
+  } else {
+    err.textContent = 'Incorrect password. Try again.';
+    document.getElementById('lock-login-pw').value = '';
+  }
+}
+
+function handleLockKeydown(e, action) {
+  if (e.key === 'Enter') {
+    if (action === 'setup') handleSetupPassword();
+    else handleLogin();
+  }
+}
+
+// ─── Helpers ────────────────────────────────────────────────────
 function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
