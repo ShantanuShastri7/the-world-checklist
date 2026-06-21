@@ -16,7 +16,9 @@
           "visitedAt": "2026-06-19T21:30",
           "image": "data/images/usa-l-industrie-pizzeria.jpg",
           "description": "Had 2 pizza slices; L'Industrie and margherita with burrata along with a tiramisu",
-          "tags": []
+          "tags": [
+            "food"
+          ]
         }
       ]
     }
