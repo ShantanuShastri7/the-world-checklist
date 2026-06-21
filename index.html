@@ -181,7 +181,7 @@
   <div class="modal-overlay" id="add-modal-overlay" onclick="closeAddModal()">
     <div class="modal add-modal" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closeAddModal()">✕</button>
-      <div class="add-modal-header">
+      <div class="add-modal-header" id="add-modal-header">
         <h2 class="add-modal-title">✈️ Add New Place</h2>
         <p class="add-modal-subtitle">Document your next adventure</p>
       </div>
@@ -211,12 +211,20 @@
 
           <div class="form-group">
             <label class="form-label" for="form-lat">Latitude *</label>
-            <input type="number" id="form-lat" class="form-input" placeholder="e.g. 48.8584" step="any" required />
+            <input type="number" id="form-lat" class="form-input" placeholder="e.g. 48.8584" step="any" required
+              oninput="updateMiniMap()" />
           </div>
 
           <div class="form-group">
             <label class="form-label" for="form-lng">Longitude *</label>
-            <input type="number" id="form-lng" class="form-input" placeholder="e.g. 2.2945" step="any" required />
+            <input type="number" id="form-lng" class="form-input" placeholder="e.g. 2.2945" step="any" required
+              oninput="updateMiniMap()" />
+          </div>
+
+          <!-- Mini map preview -->
+          <div class="form-group form-full" id="mini-map-wrap" style="display:none;">
+            <label class="form-label">📍 Location Preview</label>
+            <div id="mini-map" class="mini-map"></div>
           </div>
 
           <div class="form-group form-full">
@@ -234,7 +242,7 @@
               </div>
               <img id="image-preview" class="image-preview" style="display:none;" alt="preview" />
             </div>
-            <input type="file" id="form-image-file" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
+            <input type="file" id="form-image-file" accept="image/*,.heic,.heif,image/heic,image/heif" style="display:none;" onchange="handleImageFile(this)" />
             <input type="text" id="form-image-url" class="form-input" placeholder="Or paste image URL…" style="margin-top:8px;" oninput="handleImageUrl(this.value)" />
           </div>
 

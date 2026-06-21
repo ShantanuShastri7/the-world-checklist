@@ -52,6 +52,8 @@ function updateAuthUI() {
 let appData = { countries: [] };
 let map = null;
 let mapMarkers = null;
+let miniMap = null;
+let miniMapMarker = null;
 let currentView = 'explore';
 let activeTag = 'all';
 let searchQuery = '';
@@ -388,6 +390,10 @@ function resetAddForm() {
   uploadedImageDataUrl = null;
   document.getElementById('image-preview').style.display = 'none';
   document.getElementById('image-upload-placeholder').style.display = 'flex';
+  // Reset mini map
+  const wrap = document.getElementById('mini-map-wrap');
+  if (wrap) wrap.style.display = 'none';
+  if (miniMap) { miniMap.remove(); miniMap = null; miniMapMarker = null; }
 }
 
 function setCurrentDateTime() {
@@ -412,12 +418,45 @@ function toggleTag(btn) {
 function handleImageFile(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    uploadedImageDataUrl = e.target.result;
-    showImagePreview(uploadedImageDataUrl);
-  };
-  reader.readAsDataURL(file);
+
+  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+
+  if (isHeic) {
+    // HEIC: read as ArrayBuffer, draw to canvas, export as JPEG
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      const blob = new Blob([e.target.result], { type: 'image/heic' });
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        const jpeg = canvas.toDataURL('image/jpeg', 0.85);
+        uploadedImageDataUrl = jpeg;
+        showImagePreview(jpeg);
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        // Browser can't decode HEIC natively — show warning, store as placeholder
+        alert('Your browser cannot preview HEIC images directly. The image will be referenced by filename. Please convert to JPEG for best results.');
+        uploadedImageDataUrl = null;
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // Standard images: read as Data URL
+    const reader = new FileReader();
+    reader.onload = e => {
+      uploadedImageDataUrl = e.target.result;
+      showImagePreview(uploadedImageDataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 function handleImageUrl(url) {
@@ -433,6 +472,43 @@ function showImagePreview(src) {
   preview.src = src;
   preview.style.display = 'block';
   placeholder.style.display = 'none';
+}
+
+// ─── Mini Map Preview ─────────────────────────────────────────
+function updateMiniMap() {
+  const lat = parseFloat(document.getElementById('form-lat').value);
+  const lng = parseFloat(document.getElementById('form-lng').value);
+
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+  const wrap = document.getElementById('mini-map-wrap');
+  wrap.style.display = 'block';
+
+  if (!miniMap) {
+    // Init mini map
+    miniMap = L.map('mini-map', { zoomControl: true, attributionControl: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', maxZoom: 19
+    }).addTo(miniMap);
+  }
+
+  // Update or create marker
+  if (miniMapMarker) {
+    miniMapMarker.setLatLng([lat, lng]);
+  } else {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:20px;height:20px;background:#6366f1;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 20],
+    });
+    miniMapMarker = L.marker([lat, lng], { icon }).addTo(miniMap);
+  }
+
+  miniMap.setView([lat, lng], 13);
+
+  // Force Leaflet to recalculate size since the container was hidden
+  setTimeout(() => miniMap.invalidateSize(), 50);
 }
 
 function handleAddSubmit(e) {
@@ -485,7 +561,6 @@ function handleAddSubmit(e) {
 
   // Download updated JSON (without base64 images for large files)
   const exportData = JSON.parse(JSON.stringify(appData));
-  // Replace base64 image with placeholder hint
   exportData.countries.forEach(c => {
     c.places.forEach(p => {
       if (p.image && p.image.startsWith('data:')) {
@@ -494,17 +569,20 @@ function handleAddSubmit(e) {
     });
   });
 
+  // Cross-browser download: append anchor to body, click, then remove
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const dlUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = dlUrl;
   a.download = 'places.json';
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(dlUrl); }, 200);
 
   // Show success
   document.getElementById('add-form').style.display = 'none';
-  document.querySelector('.add-modal-header').style.display = 'none';
+  document.getElementById('add-modal-header').style.display = 'none';
   document.getElementById('add-success').style.display = 'block';
 
   // Refresh explore view
