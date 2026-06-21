@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The World Checklist — My Travel Journal</title>
+  <meta name="description" content="A personal travel journal documenting every place visited around the world, with photos, maps, and stories." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ========== SIDEBAR NAV ========== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🌍</span>
+      <span class="logo-text">World<br/><em>Checklist</em></span>
+    </div>
+
+    <div class="sidebar-nav-links">
+      <a href="#" class="nav-link active" id="nav-explore" onclick="switchView('explore')">
+        <span class="nav-icon">🗺️</span>
+        <span class="nav-label">Explore</span>
+      </a>
+      <a href="#" class="nav-link" id="nav-map" onclick="switchView('map')">
+        <span class="nav-icon">📍</span>
+        <span class="nav-label">Map</span>
+      </a>
+      <a href="#" class="nav-link" id="nav-add" onclick="openAddModal()">
+        <span class="nav-icon">✈️</span>
+        <span class="nav-label">Add Place</span>
+      </a>
+      <a href="#" class="nav-link" id="nav-takeout" onclick="openTakeoutModal()">
+        <span class="nav-icon">📥</span>
+        <span class="nav-label">Import from Google</span>
+      </a>
+    </div>
+
+    <div class="sidebar-stats" id="sidebar-stats">
+      <div class="stat-item">
+        <span class="stat-number" id="stat-countries">0</span>
+        <span class="stat-label">Countries</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="stat-places">0</span>
+        <span class="stat-label">Places</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav Toggle -->
+  <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleSidebar()">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content" id="main-content">
+
+    <!-- ---- EXPLORE VIEW ---- -->
+    <div id="view-explore" class="view active">
+
+      <!-- Hero -->
+      <header class="hero">
+        <div class="hero-bg">
+          <div class="hero-orb hero-orb-1"></div>
+          <div class="hero-orb hero-orb-2"></div>
+          <div class="hero-orb hero-orb-3"></div>
+        </div>
+        <div class="hero-content">
+          <p class="hero-eyebrow">✦ My Travel Journal</p>
+          <h1 class="hero-title">The World<br/><em>Checklist</em></h1>
+          <p class="hero-subtitle">Every place, every story, every memory — beautifully catalogued.</p>
+          <div class="hero-badges" id="hero-badges">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <div class="hero-globe">🌍</div>
+      </header>
+
+      <!-- Search & Filter Bar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Search countries, places, tags…" oninput="handleSearch(this.value)" />
+          <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none;">✕</button>
+        </div>
+        <div class="filter-tags" id="filter-tags">
+          <button class="tag-filter active" data-tag="all" onclick="filterByTag('all', this)">All</button>
+          <button class="tag-filter" data-tag="food" onclick="filterByTag('food', this)">🍜 Food</button>
+          <button class="tag-filter" data-tag="nature" onclick="filterByTag('nature', this)">🌿 Nature</button>
+          <button class="tag-filter" data-tag="culture" onclick="filterByTag('culture', this)">🏛️ Culture</button>
+          <button class="tag-filter" data-tag="adventure" onclick="filterByTag('adventure', this)">⛰️ Adventure</button>
+          <button class="tag-filter" data-tag="history" onclick="filterByTag('history', this)">📜 History</button>
+        </div>
+      </div>
+
+      <!-- Countries Grid -->
+      <div class="countries-grid" id="countries-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- No Results -->
+      <div class="no-results" id="no-results" style="display:none;">
+        <p class="no-results-emoji">🔭</p>
+        <p class="no-results-text">No places found matching your search.</p>
+        <button class="btn-secondary" onclick="clearSearch()">Clear Search</button>
+      </div>
+
+    </div>
+
+    <!-- ---- MAP VIEW ---- -->
+    <div id="view-map" class="view">
+      <div class="map-header">
+        <h2 class="map-title">📍 Map View</h2>
+        <p class="map-subtitle">Every place I've visited, pinned on the globe.</p>
+      </div>
+      <div id="map" class="leaflet-map"></div>
+    </div>
+
+  </main>
+
+  <!-- ========== PLACE DETAIL MODAL ========== -->
+  <div class="modal-overlay" id="place-modal-overlay" onclick="closePlaceModal()">
+    <div class="modal place-modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closePlaceModal()">✕</button>
+      <div class="place-modal-image-wrap">
+        <img id="modal-image" src="" alt="" class="place-modal-image" />
+        <div class="place-modal-tags" id="modal-tags"></div>
+      </div>
+      <div class="place-modal-body">
+        <div class="place-modal-meta">
+          <span id="modal-country-flag" class="modal-flag"></span>
+          <span id="modal-country-name" class="modal-country"></span>
+        </div>
+        <h2 id="modal-name" class="place-modal-title"></h2>
+        <div class="place-modal-info">
+          <div class="info-item">
+            <span class="info-icon">📅</span>
+            <span id="modal-date" class="info-text"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">📌</span>
+            <span id="modal-address" class="info-text"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">🧭</span>
+            <span id="modal-coords" class="info-text"></span>
+          </div>
+        </div>
+        <p id="modal-description" class="place-modal-description"></p>
+        <button class="btn-primary" id="modal-map-btn" onclick="goToMapPlace()">View on Map 🗺️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ADD ENTRY MODAL ========== -->
+  <div class="modal-overlay" id="add-modal-overlay" onclick="closeAddModal()">
+    <div class="modal add-modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <div class="add-modal-header">
+        <h2 class="add-modal-title">✈️ Add New Place</h2>
+        <p class="add-modal-subtitle">Document your next adventure</p>
+      </div>
+
+      <form id="add-form" class="add-form" onsubmit="handleAddSubmit(event)">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label class="form-label" for="form-country-name">Country *</label>
+            <input type="text" id="form-country-name" class="form-input" placeholder="e.g. France" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-country-flag">Flag Emoji</label>
+            <input type="text" id="form-country-flag" class="form-input" placeholder="e.g. 🇫🇷" />
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label" for="form-place-name">Place Name *</label>
+            <input type="text" id="form-place-name" class="form-input" placeholder="e.g. Eiffel Tower" required />
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label" for="form-address">Address / Location *</label>
+            <input type="text" id="form-address" class="form-input" placeholder="e.g. Champ de Mars, 5 Av. Anatole France, Paris" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-lat">Latitude *</label>
+            <input type="number" id="form-lat" class="form-input" placeholder="e.g. 48.8584" step="any" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-lng">Longitude *</label>
+            <input type="number" id="form-lng" class="form-input" placeholder="e.g. 2.2945" step="any" required />
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label" for="form-date">Date & Time Visited *</label>
+            <input type="datetime-local" id="form-date" class="form-input" required />
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label" for="form-image">Photo</label>
+            <div class="image-upload-area" id="image-upload-area" onclick="document.getElementById('form-image-file').click()">
+              <div class="image-upload-placeholder" id="image-upload-placeholder">
+                <span class="upload-icon">📷</span>
+                <span>Click to upload a photo</span>
+                <span class="upload-hint">or paste a URL below</span>
+              </div>
+              <img id="image-preview" class="image-preview" style="display:none;" alt="preview" />
+            </div>
+            <input type="file" id="form-image-file" accept="image/*" style="display:none;" onchange="handleImageFile(this)" />
+            <input type="text" id="form-image-url" class="form-input" placeholder="Or paste image URL…" style="margin-top:8px;" oninput="handleImageUrl(this.value)" />
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label" for="form-description">Journal Entry *</label>
+            <textarea id="form-description" class="form-textarea" placeholder="What did you do? How did it feel? What will you remember most?" rows="4" required></textarea>
+          </div>
+
+          <div class="form-group form-full">
+            <label class="form-label">Tags</label>
+            <div class="tag-picker">
+              <button type="button" class="tag-pick" data-tag="food" onclick="toggleTag(this)">🍜 Food</button>
+              <button type="button" class="tag-pick" data-tag="nature" onclick="toggleTag(this)">🌿 Nature</button>
+              <button type="button" class="tag-pick" data-tag="culture" onclick="toggleTag(this)">🏛️ Culture</button>
+              <button type="button" class="tag-pick" data-tag="history" onclick="toggleTag(this)">📜 History</button>
+              <button type="button" class="tag-pick" data-tag="adventure" onclick="toggleTag(this)">⛰️ Adventure</button>
+              <button type="button" class="tag-pick" data-tag="hiking" onclick="toggleTag(this)">🥾 Hiking</button>
+              <button type="button" class="tag-pick" data-tag="architecture" onclick="toggleTag(this)">🏗️ Architecture</button>
+              <button type="button" class="tag-pick" data-tag="nightlife" onclick="toggleTag(this)">🌃 Nightlife</button>
+              <button type="button" class="tag-pick" data-tag="spiritual" onclick="toggleTag(this)">🕌 Spiritual</button>
+              <button type="button" class="tag-pick" data-tag="relaxation" onclick="toggleTag(this)">🌊 Relaxation</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" onclick="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Save & Download JSON ⬇️</button>
+        </div>
+      </form>
+
+      <!-- Success message -->
+      <div class="add-success" id="add-success" style="display:none;">
+        <div class="success-icon">🎉</div>
+        <h3>New place saved!</h3>
+        <p>Your updated <code>places.json</code> has been downloaded. Follow these steps to publish it:</p>
+        <ol class="success-steps">
+          <li>Move the downloaded <code>places.json</code> to your repo's <code>data/</code> folder (replacing the old one)</li>
+          <li>If you uploaded a photo, copy it to <code>data/images/</code> and update the image path in the JSON</li>
+          <li>Commit &amp; push to GitHub — your new place will appear live!</li>
+        </ol>
+        <button class="btn-primary" onclick="closeAddModal(); location.reload();">Done ✓</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========== GOOGLE TAKEOUT IMPORT MODAL ========== -->
+  <div class="modal-overlay" id="takeout-modal-overlay" onclick="closeTakeoutModal()">
+    <div class="modal takeout-modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeTakeoutModal()">✕</button>
+
+      <!-- Step indicators -->
+      <div class="takeout-steps-header">
+        <div class="takeout-step-dot active" title="Upload">1</div>
+        <div class="takeout-step-line"></div>
+        <div class="takeout-step-dot" title="Review">2</div>
+        <div class="takeout-step-line"></div>
+        <div class="takeout-step-dot" title="Confirm">3</div>
+        <div class="takeout-step-line"></div>
+        <div class="takeout-step-dot" title="Done">4</div>
+      </div>
+
+      <!-- STEP 1: Upload -->
+      <div class="takeout-step">
+        <div class="takeout-step-body">
+          <div class="takeout-icon">📥</div>
+          <h2 class="takeout-title">Import from Google Takeout</h2>
+          <p class="takeout-desc">Export your location history from Google, then upload it here. We'll let you pick exactly which places to keep.</p>
+
+          <div class="takeout-how">
+            <div class="how-step">
+              <span class="how-num">1</span>
+              <div>
+                <strong>Go to Google Takeout</strong>
+                <p>Visit <a href="https://takeout.google.com" target="_blank" class="takeout-link">takeout.google.com</a> and sign in.</p>
+              </div>
+            </div>
+            <div class="how-step">
+              <span class="how-num">2</span>
+              <div>
+                <strong>Select only "Location History"</strong>
+                <p>Deselect all, then select <em>Location History (Timeline)</em> in JSON format.</p>
+              </div>
+            </div>
+            <div class="how-step">
+              <span class="how-num">3</span>
+              <div>
+                <strong>Extract &amp; Upload</strong>
+                <p>After download, unzip and find any <code>.json</code> file inside the <code>Semantic Location History</code> folder (e.g. <code>2024_JANUARY.json</code>), or <code>Records.json</code>.</p>
+              </div>
+            </div>
+          </div>
+
+          <label class="takeout-upload-area" for="takeout-file-input">
+            <span class="upload-icon">📂</span>
+            <span>Click to choose your Takeout JSON file</span>
+            <span class="upload-hint">Supports Semantic Location History & Records.json</span>
+            <input type="file" id="takeout-file-input" accept=".json" style="display:none"
+              onchange="handleTakeoutFile(this)" />
+          </label>
+          <button class="btn-primary" id="takeout-parse-btn" style="width:100%;justify-content:center;margin-top:12px;"
+            onclick="document.getElementById('takeout-file-input').click()">
+            Choose File &amp; Parse →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Review -->
+      <div class="takeout-step" style="display:none">
+        <div class="takeout-step-body">
+          <div class="takeout-review-header">
+            <div>
+              <h2 class="takeout-title" style="margin-bottom:4px;">Review Places</h2>
+              <span class="takeout-count-badge" id="takeout-count-badge">0 places found</span>
+            </div>
+            <div class="takeout-actions-row">
+              <button class="btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selectAllTakeout()">Select All</button>
+              <button class="btn-secondary" style="padding:7px 14px;font-size:12px;" onclick="selectNoneTakeout()">Select None</button>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="takeout-filters">
+            <div class="search-wrap" style="flex:1">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" placeholder="Search places…"
+                oninput="takeoutFilterSearch=this.value;renderTakeoutReview()" />
+            </div>
+            <select id="takeout-country-filter" class="form-input" style="flex:0 0 200px;"
+              onchange="takeoutFilterCountry=this.value;renderTakeoutReview()">
+              <option value="all">All Countries</option>
+            </select>
+          </div>
+
+          <div class="takeout-review-list" id="takeout-review-list"></div>
+
+          <div class="takeout-footer">
+            <span class="takeout-selected-count" id="takeout-selected-count">0 selected</span>
+            <div style="display:flex;gap:10px;">
+              <button class="btn-secondary" onclick="showTakeoutStep(1)">← Back</button>
+              <button class="btn-primary" onclick="applyTakeoutImport()">Continue →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Confirm -->
+      <div class="takeout-step" style="display:none">
+        <div class="takeout-step-body">
+          <h2 class="takeout-title">Confirm Import</h2>
+          <p class="takeout-desc">You're about to import <strong id="takeout-import-count">0</strong> places. These will be added to your journal (duplicates skipped). You can edit details after import.</p>
+          <div class="takeout-confirm-list" id="takeout-confirm-list"></div>
+          <div class="takeout-footer">
+            <button class="btn-secondary" onclick="showTakeoutStep(2)">← Back</button>
+            <button class="btn-primary" onclick="confirmTakeoutImport()">Import & Download JSON ⬇️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Done -->
+      <div class="takeout-step" style="display:none">
+        <div class="takeout-step-body" style="text-align:center;padding:40px 0;">
+          <div style="font-size:64px;margin-bottom:16px;">🎉</div>
+          <h2 class="takeout-title">Import Complete!</h2>
+          <p class="takeout-desc">Your places have been imported and are live in the app. The updated <code>places.json</code> has been downloaded — commit it to GitHub to publish.</p>
+          <p class="takeout-desc" style="margin-top:12px;">Tip: Click any imported place to add photos and a personal story!</p>
+          <button class="btn-primary" style="margin-top:24px;" onclick="closeTakeoutModal()">View My Places 🗺️</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
