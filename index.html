@@ -38,23 +38,23 @@
         <span class="nav-icon">📍</span>
         <span class="nav-label">Map</span>
       </a>
-      <a href="#" class="nav-link" id="nav-add" onclick="openAddModal()">
+      <button class="nav-link" id="nav-add" onclick="openAddModal()">
         <span class="nav-icon">✈️</span>
         <span class="nav-label">Add Place</span>
-      </a>
-      <a href="#" class="nav-link" id="nav-takeout" onclick="openTakeoutModal()">
+      </button>
+      <button class="nav-link" id="nav-takeout" onclick="openTakeoutModal()">
         <span class="nav-icon">📥</span>
         <span class="nav-label">Import from Google</span>
-      </a>
+      </button>
       <!-- Lock / Unlock — toggled by JS -->
-      <a href="#" class="nav-link nav-link-lock" id="nav-unlock" onclick="event.preventDefault();openUnlockModal(null)">
+      <button class="nav-link nav-link-lock" id="nav-unlock" onclick="openUnlockModal(null)">
         <span class="nav-icon">🔓</span>
         <span class="nav-label">Owner Login</span>
-      </a>
-      <a href="#" class="nav-link nav-link-lock" id="nav-lock" onclick="event.preventDefault();lockSession()">
+      </button>
+      <button class="nav-link nav-link-lock" id="nav-lock" onclick="lockSession()">
         <span class="nav-icon">🔒</span>
         <span class="nav-label">Lock</span>
-      </a>
+      </button>
     </div>
 
     <div class="sidebar-stats" id="sidebar-stats">

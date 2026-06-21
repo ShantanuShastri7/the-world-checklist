@@ -134,6 +134,9 @@ img { display: block; max-width: 100%; }
   transition: all var(--transition);
   position: relative;
   overflow: hidden;
+  width: 100%;
+  text-align: left;
+  background: none;
 }
 
 .nav-link::before {
