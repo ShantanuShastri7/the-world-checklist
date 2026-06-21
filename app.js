@@ -3,9 +3,11 @@
    ============================================================ */
 
 // ─── Auth ────────────────────────────────────────────────────
-// Password is stored ONLY as a SHA-256 hash in localStorage.
-// The actual password is never saved anywhere in the code or repo.
-const AUTH_HASH_KEY = 'worldChecklist_authHash';
+// The password hash is hardcoded. To change your password:
+//   1. Run: node -e "const c=require('crypto');console.log(c.createHash('sha256').update('NEW_PASSWORD').digest('hex'))"
+//   2. Replace the AUTH_HASH value below with the output.
+//   3. Commit and push.
+const AUTH_HASH = 'a3b6774c0cddefd60dc8b64667b1446abdd2b887e9c9d099559ac54d6107c6fb';
 const AUTH_SESSION_KEY = 'worldChecklist_unlocked';
 
 async function sha256(message) {
@@ -19,24 +21,13 @@ function isUnlocked() {
   return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true';
 }
 
-function hasPasswordSet() {
-  return !!localStorage.getItem(AUTH_HASH_KEY);
-}
-
 async function attemptUnlock(password) {
   const hash = await sha256(password);
-  const stored = localStorage.getItem(AUTH_HASH_KEY);
-  if (hash === stored) {
+  if (hash === AUTH_HASH) {
     sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
     return true;
   }
   return false;
-}
-
-async function setPassword(password) {
-  const hash = await sha256(password);
-  localStorage.setItem(AUTH_HASH_KEY, hash);
-  sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
 }
 
 function lockSession() {
@@ -46,7 +37,6 @@ function lockSession() {
 
 function updateAuthUI() {
   const unlocked = isUnlocked();
-  // Show/hide the owner-only nav items
   const addLink = document.getElementById('nav-add');
   const takeoutLink = document.getElementById('nav-takeout');
   const lockBtn = document.getElementById('nav-lock');
@@ -813,46 +803,20 @@ let _pendingActionAfterUnlock = null;
 function openUnlockModal(pendingAction) {
   _pendingActionAfterUnlock = pendingAction || null;
   const overlay = document.getElementById('lock-modal-overlay');
-  // Decide which panel to show: setup (first time) or login
-  const setupPanel = document.getElementById('lock-setup-panel');
-  const loginPanel = document.getElementById('lock-login-panel');
-  if (hasPasswordSet()) {
-    setupPanel.style.display = 'none';
-    loginPanel.style.display = 'block';
-  } else {
-    setupPanel.style.display = 'block';
-    loginPanel.style.display = 'none';
-  }
-  // Clear inputs and errors
-  ['lock-setup-pw', 'lock-setup-pw2', 'lock-login-pw'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const errSetup = document.getElementById('lock-error-setup');
+  // Always show the login panel — no setup flow
+  document.getElementById('lock-login-pw').value = '';
   const errLogin = document.getElementById('lock-error-login');
-  if (errSetup) errSetup.textContent = '';
   if (errLogin) errLogin.textContent = '';
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Focus the input after animation
+  setTimeout(() => document.getElementById('lock-login-pw').focus(), 100);
 }
 
 function closeLockModal() {
   document.getElementById('lock-modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
   _pendingActionAfterUnlock = null;
-}
-
-async function handleSetupPassword() {
-  const pw = document.getElementById('lock-setup-pw').value;
-  const pw2 = document.getElementById('lock-setup-pw2').value;
-  const err = document.getElementById('lock-error-setup');
-  if (pw.length < 4) { err.textContent = 'Password must be at least 4 characters.'; return; }
-  if (pw !== pw2) { err.textContent = 'Passwords do not match.'; return; }
-  await setPassword(pw);
-  closeLockModal();
-  updateAuthUI();
-  if (_pendingActionAfterUnlock === 'add') openAddModal();
-  else if (_pendingActionAfterUnlock === 'takeout') openTakeoutModal();
 }
 
 async function handleLogin() {
@@ -867,14 +831,12 @@ async function handleLogin() {
   } else {
     err.textContent = 'Incorrect password. Try again.';
     document.getElementById('lock-login-pw').value = '';
+    document.getElementById('lock-login-pw').focus();
   }
 }
 
-function handleLockKeydown(e, action) {
-  if (e.key === 'Enter') {
-    if (action === 'setup') handleSetupPassword();
-    else handleLogin();
-  }
+function handleLockKeydown(e) {
+  if (e.key === 'Enter') handleLogin();
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
