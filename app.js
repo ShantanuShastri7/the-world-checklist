@@ -803,25 +803,41 @@ let _pendingActionAfterUnlock = null;
 function openUnlockModal(pendingAction) {
   _pendingActionAfterUnlock = pendingAction || null;
   const overlay = document.getElementById('lock-modal-overlay');
-  // Always show the login panel — no setup flow
-  document.getElementById('lock-login-pw').value = '';
+  if (!overlay) return;
+
+  // Hide setup panel if it still exists (old HTML cache)
+  const setupPanel = document.getElementById('lock-setup-panel');
+  const loginPanel = document.getElementById('lock-login-panel');
+  if (setupPanel) setupPanel.style.display = 'none';
+  if (loginPanel) loginPanel.style.display = 'block';
+
+  // Clear the password field
+  const pwInput = document.getElementById('lock-login-pw');
+  if (pwInput) pwInput.value = '';
+
+  // Clear error
   const errLogin = document.getElementById('lock-error-login');
   if (errLogin) errLogin.textContent = '';
+  const errSetup = document.getElementById('lock-error-setup');
+  if (errSetup) errSetup.textContent = '';
+
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  // Focus the input after animation
-  setTimeout(() => document.getElementById('lock-login-pw').focus(), 100);
+  setTimeout(() => { const el = document.getElementById('lock-login-pw'); if (el) el.focus(); }, 100);
 }
 
 function closeLockModal() {
-  document.getElementById('lock-modal-overlay').classList.remove('open');
+  const overlay = document.getElementById('lock-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
   document.body.style.overflow = '';
   _pendingActionAfterUnlock = null;
 }
 
 async function handleLogin() {
-  const pw = document.getElementById('lock-login-pw').value;
+  const pwInput = document.getElementById('lock-login-pw');
   const err = document.getElementById('lock-error-login');
+  if (!pwInput) return;
+  const pw = pwInput.value;
   const ok = await attemptUnlock(pw);
   if (ok) {
     closeLockModal();
@@ -829,9 +845,9 @@ async function handleLogin() {
     if (_pendingActionAfterUnlock === 'add') openAddModal();
     else if (_pendingActionAfterUnlock === 'takeout') openTakeoutModal();
   } else {
-    err.textContent = 'Incorrect password. Try again.';
-    document.getElementById('lock-login-pw').value = '';
-    document.getElementById('lock-login-pw').focus();
+    if (err) err.textContent = 'Incorrect password. Try again.';
+    pwInput.value = '';
+    pwInput.focus();
   }
 }
 
