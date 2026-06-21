@@ -823,12 +823,15 @@ function openUnlockModal(pendingAction) {
     setupPanel.style.display = 'block';
     loginPanel.style.display = 'none';
   }
-  // Clear inputs
+  // Clear inputs and errors
   ['lock-setup-pw', 'lock-setup-pw2', 'lock-login-pw'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('lock-error').textContent = '';
+  const errSetup = document.getElementById('lock-error-setup');
+  const errLogin = document.getElementById('lock-error-login');
+  if (errSetup) errSetup.textContent = '';
+  if (errLogin) errLogin.textContent = '';
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -842,20 +845,19 @@ function closeLockModal() {
 async function handleSetupPassword() {
   const pw = document.getElementById('lock-setup-pw').value;
   const pw2 = document.getElementById('lock-setup-pw2').value;
-  const err = document.getElementById('lock-error');
+  const err = document.getElementById('lock-error-setup');
   if (pw.length < 4) { err.textContent = 'Password must be at least 4 characters.'; return; }
   if (pw !== pw2) { err.textContent = 'Passwords do not match.'; return; }
   await setPassword(pw);
   closeLockModal();
   updateAuthUI();
-  // Fire the pending action
   if (_pendingActionAfterUnlock === 'add') openAddModal();
   else if (_pendingActionAfterUnlock === 'takeout') openTakeoutModal();
 }
 
 async function handleLogin() {
   const pw = document.getElementById('lock-login-pw').value;
-  const err = document.getElementById('lock-error');
+  const err = document.getElementById('lock-error-login');
   const ok = await attemptUnlock(pw);
   if (ok) {
     closeLockModal();

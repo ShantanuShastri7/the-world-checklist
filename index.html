@@ -47,11 +47,11 @@
         <span class="nav-label">Import from Google</span>
       </a>
       <!-- Lock / Unlock — toggled by JS -->
-      <a href="#" class="nav-link nav-link-lock" id="nav-unlock" onclick="openUnlockModal(null)">
+      <a href="#" class="nav-link nav-link-lock" id="nav-unlock" onclick="event.preventDefault();openUnlockModal(null)">
         <span class="nav-icon">🔓</span>
         <span class="nav-label">Owner Login</span>
       </a>
-      <a href="#" class="nav-link nav-link-lock" id="nav-lock" onclick="lockSession()">
+      <a href="#" class="nav-link nav-link-lock" id="nav-lock" onclick="event.preventDefault();lockSession()">
         <span class="nav-icon">🔒</span>
         <span class="nav-label">Lock</span>
       </a>
@@ -301,7 +301,7 @@
             <input type="password" id="lock-setup-pw2" class="form-input" placeholder="Repeat password"
               onkeydown="handleLockKeydown(event,'setup')" />
           </div>
-          <p class="lock-error" id="lock-error"></p>
+          <p class="lock-error" id="lock-error-setup"></p>
           <button class="btn-primary" style="width:100%;justify-content:center;" onclick="handleSetupPassword()">
             Set Password &amp; Continue →
           </button>
@@ -319,7 +319,7 @@
             <input type="password" id="lock-login-pw" class="form-input" placeholder="Your password"
               onkeydown="handleLockKeydown(event,'login')" autofocus />
           </div>
-          <p class="lock-error" id="lock-error"></p>
+          <p class="lock-error" id="lock-error-login"></p>
           <button class="btn-primary" style="width:100%;justify-content:center;" onclick="handleLogin()">
             Unlock 🔓
           </button>
