@@ -27,7 +27,7 @@
           "address": "99 MacDougal St, New York, NY 10012",
           "lat": 40.7296128,
           "lng": -74.0009837,
-          "visitedAt": "2026-06-20T13:00",
+          "visitedAt": "2026-06-21T13:30",
           "image": "data/images/usa-kati-roll-company.jpg",
           "description": "Ate Unda Chicken Kati Roll, it was good.",
           "tags": [
@@ -41,7 +41,7 @@
           "address": "Washington Square, New York, NY 10012",
           "lat": 40.7308,
           "lng": -73.9975,
-          "visitedAt": "2026-06-20T14:30",
+          "visitedAt": "2026-06-21T14:30",
           "image": "data/images/usa-washington-square-park.jpg",
           "description": "Listened to music and saw pigeons in Washington Square Park.",
           "tags": [
@@ -57,7 +57,7 @@
           "address": "502 Hudson St, New York, NY 10014",
           "lat": 40.7335,
           "lng": -74.0062,
-          "visitedAt": "2026-06-20T16:00",
+          "visitedAt": "2026-06-21T16:00",
           "image": "data/images/usa-blackstone-coffee-roasters.jpg",
           "description": "Had Cold brew from blackstone.",
           "tags": [
@@ -72,7 +72,7 @@
           "address": "Hudson River Park, New York, NY 10014",
           "lat": 40.7331,
           "lng": -74.0126,
-          "visitedAt": "2026-06-20T17:30",
+          "visitedAt": "2026-06-21T16:30",
           "image": "data/images/usa-pier-45.jpg",
           "description": "Chilled in pier 45.",
           "tags": [
@@ -88,7 +88,7 @@
           "address": "SoHo, New York, NY",
           "lat": 40.723,
           "lng": -74,
-          "visitedAt": "2026-06-20T19:00",
+          "visitedAt": "2026-06-21T18:00",
           "image": "data/images/usa-soho.jpg",
           "description": "Did window shopping in soho.",
           "tags": [
@@ -100,10 +100,10 @@
           "id": "usa-levain-bakery",
           "name": "Levain Bakery",
           "location": "40.7785° N, 73.9791° W",
-          "address": "167 W 74th St, New York, NY 10023",
-          "lat": 40.7785,
-          "lng": -73.9791,
-          "visitedAt": "2026-06-20T20:30",
+          "address": "340 Lafayette St, New York, NY 10012",
+          "lat": 40.726157,
+          "lng": -73.994728,
+          "visitedAt": "2026-06-21T18:30",
           "image": "data/images/usa-levain-bakery.jpg",
           "description": "Had dark chocolate cookie with ice cream in Levain.",
           "tags": [
